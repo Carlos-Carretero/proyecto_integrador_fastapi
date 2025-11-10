@@ -15,7 +15,6 @@ idna==3.11
 iniconfig==2.3.0
 packaging==25.0
 pluggy==1.6.0
-psycopg==3.2.12
 psycopg-binary==3.2.12
 psycopg2==2.9.11
 pyasn1==0.6.1
