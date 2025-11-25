@@ -3,6 +3,7 @@ from typing import Optional, Dict, Any
 import jwt  # PyJWT
 from fastapi import HTTPException, status
 from app.core.config import settings
+import bcrypt
 
 
 def create_access_token(data: Dict[str, Any], expires_minutes: int | None = None) -> str:
@@ -25,3 +26,20 @@ def decode_token(token: str) -> Dict[str, Any]:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expirado")
     except jwt.InvalidTokenError:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token inválido")
+
+
+def hash_password(password: str) -> str:
+    """Hash a plain-text password using bcrypt and return the encoded string."""
+    if password is None:
+        raise ValueError("Password requerido para hashear")
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a plain password against the stored bcrypt hash."""
+    if plain_password is None or hashed_password is None:
+        return False
+    try:
+        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+    except Exception:
+        return False

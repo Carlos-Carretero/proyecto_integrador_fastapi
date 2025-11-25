@@ -22,6 +22,10 @@ RUN pip install --upgrade pip && pip install --no-cache-dir -r requirements.txt
 
 # Copiar el código de la app
 COPY app ./app
+# Copiar configuraciones de migración y scripts
+COPY alembic.ini ./
+COPY alembic ./alembic
+COPY scripts ./scripts
 # COPY docs ./docs
 
 # Exponer el puerto de la app
