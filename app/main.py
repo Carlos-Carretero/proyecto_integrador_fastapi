@@ -5,9 +5,37 @@ from app.api.v1.routers import api_router
 from app.core.config import settings
 from app.core.database import Base, engine
 from app.core.auth_middleware import RoleAuthMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import InvalidRequestError, SQLAlchemyError
+import logging
 
 
 app = FastAPI(title=settings.app_name)
+
+# Setup logger
+logger = logging.getLogger("uvicorn.error")
+
+
+# Global exception handlers for SQLAlchemy errors to avoid crashing the app
+
+
+@app.exception_handler(InvalidRequestError)
+def invalid_request_handler(request, exc: InvalidRequestError):
+    # Log full exception for debugging, but return a safe message to clients
+    logger.exception("SQLAlchemy InvalidRequestError: %s", exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error (database mapping/configuration). Please contact the administrator."},
+    )
+
+
+@app.exception_handler(SQLAlchemyError)
+def sqlalchemy_error_handler(request, exc: SQLAlchemyError):
+    logger.exception("SQLAlchemy error: %s", exc)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error (database). Please try again later."},
+    )
 
 # CORS
 app.add_middleware(
