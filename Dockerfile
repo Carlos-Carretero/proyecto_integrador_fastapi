@@ -28,4 +28,4 @@ COPY app ./app
 EXPOSE 8000
 
 # Comando de arranque: Render inyecta $PORT
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "alembic upgrade head || true; uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
