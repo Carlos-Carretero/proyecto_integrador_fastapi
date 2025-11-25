@@ -8,6 +8,10 @@ from app.core.auth_middleware import RoleAuthMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import InvalidRequestError, SQLAlchemyError
 import logging
+from sqlalchemy import text
+from sqlalchemy.orm import configure_mappers
+from app.core.database import engine
+import importlib
 
 
 app = FastAPI(title=settings.app_name)
@@ -66,6 +70,42 @@ def on_startup():
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+
+@app.get("/health/diagnostics")
+def health_diagnostics():
+    """Run lightweight diagnostics:
+    - attempt to import models package
+    - force SQLAlchemy mapper configuration via `configure_mappers()`
+    - open a DB connection and run `SELECT 1`
+    Returns 200 if all checks pass, otherwise 500 with details.
+    """
+    problems: list[str] = []
+
+    # Ensure models are imported so metadata/mappers are available
+    try:
+        importlib.import_module('app.models')
+    except Exception as e:
+        problems.append(f"models import failed: {e}")
+
+    # Force mapper configuration to surface mapping errors early
+    try:
+        configure_mappers()
+    except Exception as e:
+        problems.append(f"mapper configuration error: {e}")
+
+    # Test DB connectivity
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+    except Exception as e:
+        problems.append(f"database connection/query failed: {e}")
+
+    if problems:
+        logger.error("Health diagnostics found problems: %s", problems)
+        return JSONResponse(status_code=500, content={"ok": False, "problems": problems})
+
+    return {"ok": True, "detail": "All diagnostics passed"}
 
 
 @app.get("/scalar", include_in_schema=False)
