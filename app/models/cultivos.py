@@ -16,6 +16,5 @@ class Cultivos(Base):
     usuario = relationship(
         "Usuario",
         back_populates="cultivos",
-        cascade="all, delete-orphan",
         passive_deletes=True,
     )
